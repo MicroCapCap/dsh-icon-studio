@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "DSH Icon Studio",
+    "description": "Restyles every icon DeepSeek Harness renders from one PNG image: the tray icon in the hidden-icon area, the About panel icon, the Desktop and Start Menu shortcut icons, and the window, taskbar, alt-tab and Explorer icon embedded in DeepSeek Harness.exe. Any icon size from 16 to 256 px is generated with a transparent background, every replaced file is backed up first, the patched executable is verified and smoke-tested before it is swapped in, and the original icons can be restored at any time. The window and taskbar icon come from the executable's own resources, so they can only be changed by patching that binary; a DSH update restores the vendor icon and re-applying is one tool call.",
+    "detail": "docs/DETAIL.md"
+  }
+}

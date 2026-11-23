@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Icon Studio">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2455e"/>
+      <stop offset="30%" stop-color="#f59331"/>
+      <stop offset="55%" stop-color="#f2d020"/>
+      <stop offset="78%" stop-color="#3fbf7f"/>
+      <stop offset="100%" stop-color="#2f7ef7"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#ring)" fill-rule="evenodd" d="M32 4a28 28 0 1 1 0 56 28 28 0 0 1 0-56Zm0 12a16 16 0 1 0 0 32 16 16 0 0 0 0-32Z"/>
+  <path fill="#ffffff" opacity="0.92" d="M33 4.2c6.4 5.6 6.2 13.4 1.2 17.6-4.6 3.8-6.4 9.4-3.4 14.2-4.2-2.6-6.4-8.2-3.8-13.4 2.2-4.4 7.6-6.2 6-18.4Z"/>
+  <circle cx="32" cy="32" r="16" fill="#0f1115"/>
+  <circle cx="32" cy="32" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1"/>
+</svg>
