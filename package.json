@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-icon-studio",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "led",
   "description": "Restyles every icon DeepSeek Harness renders from one PNG: tray icon, About panel icon, Desktop/Start Menu shortcut icons, and the window/taskbar/Explorer icon embedded in the executable. Ships a settings page for upload-and-confirm, builds all Windows icon sizes, backs up and verifies what it replaces, and can restore the originals.",
   "type": "module",

@@ -363,6 +363,28 @@ const RESTORE_TOOL = textTool({
  * HTTP routes behind the settings page
  * ------------------------------------------------------------------------ */
 
+/**
+ * The host's trust fence. `connection.requestRejection` applies the same
+ * Host/Origin + login-token gate the shipped routes use. A composition without
+ * that service is refused rather than left open; the loopback check below
+ * stays as a second gate because these routes change files on the machine.
+ */
+function trustRefusal(ctx, request) {
+  let connection
+  try {
+    connection = typeof ctx.get === 'function' ? ctx.get('connection') : undefined
+  } catch {
+    return 403
+  }
+  if (typeof connection?.requestRejection !== 'function') return 403
+  try {
+    const rejection = connection.requestRejection(request)
+    return rejection === undefined ? undefined : rejection
+  } catch {
+    return 403
+  }
+}
+
 /** Loopback-only, same-origin fence: this page changes files on the machine. */
 function isLoopbackRequest(request) {
   const address = request.socket?.remoteAddress
@@ -430,8 +452,13 @@ function query(request) {
   }
 }
 
-function makeRoutes() {
+function makeRoutes(ctx) {
   const guard = (req, res, method) => {
+    const refusal = trustRefusal(ctx, req)
+    if (refusal !== undefined) {
+      writeJson(res, refusal, { error: refusal === 401 ? 'unauthorized' : 'forbidden' })
+      return false
+    }
     if (!isLoopbackRequest(req)) {
       writeJson(res, 403, { error: 'forbidden: loopback-only' })
       return false
@@ -570,7 +597,7 @@ export function apply(ctx) {
     text: GUIDANCE,
   }))
   if (ctx.webServer !== undefined && typeof ctx.webServer.register === 'function') {
-    for (const route of makeRoutes()) disposers.push(ctx.webServer.register(route))
+    for (const route of makeRoutes(ctx)) disposers.push(ctx.webServer.register(route))
   }
   // A swap renames the running executable aside; it stays locked until this
   // process exits, so every startup is the first moment it can be deleted.

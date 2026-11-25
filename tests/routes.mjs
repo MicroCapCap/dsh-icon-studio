@@ -124,11 +124,17 @@ async function main() {
   check('injects webServer', inject.includes('webServer'), inject.join(','))
 
   const routes = []
+  let rejection
+  const connection = { requestRejection: () => rejection }
   const ctx = {
     tools: { register: () => () => {} },
     systemPrompt: { section: () => () => {} },
     webServer: { register: route => (routes.push(route), () => {}) },
     effect: () => {},
+    connection,
+    get(name) {
+      return name === 'connection' ? this.connection : undefined
+    },
   }
   apply(ctx)
   check('five routes registered', routes.length === 5, routes.map(route => route.path).join(', '))
@@ -150,6 +156,23 @@ async function main() {
     const res = fakeRes()
     await route('/status')(fakeReq({ url: '/api/dsh-icon-studio/status', method: 'POST' }), res)
     check('wrong method is refused', res.status === 405, res.status)
+  }
+  // Fence: the host's connection gate is honoured before anything else runs.
+  {
+    rejection = 403
+    const res = fakeRes()
+    await route('/status')(fakeReq({ url: '/api/dsh-icon-studio/status' }), res)
+    rejection = undefined
+    check('connection rejection is honoured', res.status === 403, res.status)
+  }
+  // Fence: no connection service means no route, not an open route.
+  {
+    const saved = ctx.get
+    delete ctx.get
+    const res = fakeRes()
+    await route('/status')(fakeReq({ url: '/api/dsh-icon-studio/status' }), res)
+    ctx.get = saved
+    check('missing connection service is refused', res.status === 403, res.status)
   }
 
   // Status: resolves the installation it is installed in.
