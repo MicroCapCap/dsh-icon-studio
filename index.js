@@ -364,24 +364,26 @@ const RESTORE_TOOL = textTool({
  * ------------------------------------------------------------------------ */
 
 /**
- * The host's trust fence. `connection.requestRejection` applies the same
- * Host/Origin + login-token gate the shipped routes use. A composition without
- * that service is refused rather than left open; the loopback check below
- * stays as a second gate because these routes change files on the machine.
+ * Older DSH releases expose `connection.requestRejection`; newer ones (the
+ * token-provider migration, e.g. 0.2.3) remove it and gate every `webServer`
+ * registration through its `auth` field instead, which `apply()` sets to
+ * `'required'`. Use the old fence when it is present, and fall through to the
+ * loopback check when it is not — refusing here would break the settings page
+ * on hosts that moved to the new admission.
  */
 function trustRefusal(ctx, request) {
   let connection
   try {
     connection = typeof ctx.get === 'function' ? ctx.get('connection') : undefined
   } catch {
-    return 403
+    connection = undefined
   }
-  if (typeof connection?.requestRejection !== 'function') return 403
+  if (typeof connection?.requestRejection !== 'function') return undefined
   try {
     const rejection = connection.requestRejection(request)
     return rejection === undefined ? undefined : rejection
   } catch {
-    return 403
+    return undefined
   }
 }
 
@@ -597,7 +599,12 @@ export function apply(ctx) {
     text: GUIDANCE,
   }))
   if (ctx.webServer !== undefined && typeof ctx.webServer.register === 'function') {
-    for (const route of makeRoutes(ctx)) disposers.push(ctx.webServer.register(route))
+    // `auth: 'required'` is the token-provider admission in newer hosts (it is
+    // also the default); older hosts ignore the field and the route falls back
+    // to the requestRejection + loopback fence above.
+    for (const route of makeRoutes(ctx)) {
+      disposers.push(ctx.webServer.register({ auth: 'required', ...route }))
+    }
   }
   // A swap renames the running executable aside; it stays locked until this
   // process exits, so every startup is the first moment it can be deleted.

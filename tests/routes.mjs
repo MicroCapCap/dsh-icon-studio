@@ -139,6 +139,7 @@ async function main() {
   apply(ctx)
   check('five routes registered', routes.length === 5, routes.map(route => route.path).join(', '))
   check('routes are exact', routes.every(route => route.kind === 'exact'))
+  check('routes require host authentication', routes.every(route => route.auth === 'required'))
 
   const route = path => {
     const found = routes.find(entry => entry.path === `/api/dsh-icon-studio${path}`)
@@ -165,14 +166,15 @@ async function main() {
     rejection = undefined
     check('connection rejection is honoured', res.status === 403, res.status)
   }
-  // Fence: no connection service means no route, not an open route.
+  // Fence: no connection service must not mean no route. Newer hosts gate the
+  // registration through `auth` instead; the handler falls through to loopback.
   {
     const saved = ctx.get
     delete ctx.get
     const res = fakeRes()
     await route('/status')(fakeReq({ url: '/api/dsh-icon-studio/status' }), res)
     ctx.get = saved
-    check('missing connection service is refused', res.status === 403, res.status)
+    check('missing connection service falls through to loopback', res.status === 200, res.status)
   }
 
   // Status: resolves the installation it is installed in.

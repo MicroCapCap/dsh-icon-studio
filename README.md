@@ -34,10 +34,10 @@ The settings page talks to the Host half over loopback-only routes:
 | `POST /api/dsh-icon-studio/restore` | restore the recorded originals |
 | `GET /api/dsh-icon-studio/preview?slug=` | the preview contact sheet as PNG bytes |
 
-Every route first passes the host's own trust fence
-(`connection.requestRejection`, the same Host/Origin + login-token gate the
-shipped routes use); a composition without that service refuses every route.
-It then rejects non-loopback callers, cross-site `sec-fetch-site`, and a
+Every route is registered with `auth: 'required'`, so a host with the
+token-provider admission authenticates it before the handler runs; on older
+hosts the handler still applies `connection.requestRejection` when that service
+exists. It then rejects non-loopback callers, cross-site `sec-fetch-site`, and a
 mismatched `Origin`, so a web page cannot drive it.
 
 The tray icon and the window/taskbar icon are independent: changing one never
