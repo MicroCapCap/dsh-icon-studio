@@ -29,19 +29,22 @@ const MAX_JSON_BODY_BYTES = 32 * 1024 * 1024
 const GUIDANCE = [
   '# DSH Icon Studio',
   '',
-  'This profile can restyle its own DeepSeek Harness icons. When the user wants',
-  'a different app icon, taskbar icon, desktop/Start-Menu shortcut icon, or the',
-  'tray ("hidden bar") icon, use the `dsh_icon_apply` tool with the image path',
-  'instead of writing scripts: it converts any PNG into every Windows icon size',
-  'and applies it to the tray, the shortcuts, and the executable. Use',
-  '`dsh_icon_status` to report what is currently applied, and',
-  '`dsh_icon_restore` to go back to the previous icons.',
+  'This profile can restyle its own DeepSeek Harness icons, but changing them is',
+  'a manual action: the user picks a PNG in Settings → Icon Studio and confirms',
+  'Apply there. Do not write scripts that patch the executable, the shortcuts,',
+  'or the tray icon yourself, and do not ask the user to run one.',
   '',
-  'Notes: the engine accepts PNG input; for another format, convert it first.',
-  'A tray icon and the window/taskbar icon are separate sources, so changing one',
-  'never changes the other. Applying an executable icon replaces the vendor',
-  'signature of that binary and a DSH update restores the vendor icon, so',
-  're-applying after an update is expected.',
+  'Use the read-only `dsh_icon_status` tool to report what is currently applied.',
+  'When the user wants a different app icon, taskbar icon, desktop/Start-Menu',
+  'shortcut icon, or tray ("hidden bar") icon, point them to Settings → Icon',
+  'Studio, where the same image becomes every Windows icon size and Restore puts',
+  'the originals back.',
+  '',
+  'Notes: the settings page accepts PNG input; for another format, convert it',
+  'first. A tray icon and the window/taskbar icon are separate sources, so',
+  'changing one never changes the other. Applying an executable icon replaces',
+  'the vendor signature of that binary and a DSH update restores the vendor',
+  'icon, so re-applying after an update is expected.',
 ].join('\n')
 
 /** Absolute candidate installation directories, most likely first. */
@@ -304,61 +307,6 @@ const STATUS_TOOL = textTool({
   },
 })
 
-const APPLY_TOOL = textTool({
-  name: 'dsh_icon_apply',
-  description: 'Turn a PNG image into every Windows icon size and apply it to DeepSeek Harness: the tray icon (resources/tray.ico), the About panel icon (resources/icon.png), the Desktop/Start Menu shortcuts, and the window/taskbar/Explorer icon embedded in DeepSeek Harness.exe. Backs up every replaced file first, verifies and smoke-tests the patched executable before swapping it in, and reports what still needs a restart.',
-  parameters: {
-    type: 'object',
-    required: ['image'],
-    properties: {
-      image: { type: 'string', description: 'Absolute path to the source PNG image.' },
-      targets: {
-        type: 'array',
-        items: { type: 'string', enum: ['tray', 'shortcuts', 'exe'] },
-        description: 'Which surfaces to change. Defaults to all three.',
-      },
-      background: {
-        type: 'string',
-        enum: ['auto', 'alpha', 'white'],
-        description: 'How to treat the background: auto keeps existing transparency and otherwise removes white; alpha requires transparency; white forces white removal.',
-      },
-      installDir: { type: 'string', description: 'DeepSeek Harness installation directory; auto-detected when omitted.' },
-      smoke: { type: 'boolean', description: 'Run the patched binary once in node mode before swapping it in. Defaults to true.' },
-    },
-  },
-  async execute(args) {
-    if (typeof args.image !== 'string' || args.image.trim() === '') {
-      throw new Error('dsh_icon_apply needs an image path')
-    }
-    const installDir = resolveInstallDir(args.installDir)
-    const result = await runEngine({
-      command: 'apply',
-      installDir,
-      image: args.image.trim(),
-      targets: Array.isArray(args.targets) && args.targets.length > 0 ? args.targets : ['tray', 'shortcuts', 'exe'],
-      background: typeof args.background === 'string' ? args.background : 'auto',
-      smoke: args.smoke !== false,
-    })
-    return { summary: applySummary(result.data), detail: result.data }
-  },
-})
-
-const RESTORE_TOOL = textTool({
-  name: 'dsh_icon_restore',
-  description: 'Undo the icon change made by dsh_icon_apply: restore the original resources/tray.ico and resources/icon.png, the original shortcut IconLocations, and the original DeepSeek Harness.exe.',
-  parameters: {
-    type: 'object',
-    properties: {
-      installDir: { type: 'string', description: 'DeepSeek Harness installation directory; auto-detected when omitted.' },
-    },
-  },
-  async execute(args) {
-    const installDir = resolveInstallDir(args.installDir)
-    const result = await runEngine({ command: 'restore', installDir })
-    return { summary: restoreSummary(result.data), detail: result.data }
-  },
-})
-
 /* ------------------------------------------------------------------------ *
  * HTTP routes behind the settings page
  * ------------------------------------------------------------------------ */
@@ -592,7 +540,7 @@ function makeRoutes(ctx) {
 }
 
 export function apply(ctx) {
-  const disposers = [STATUS_TOOL, APPLY_TOOL, RESTORE_TOOL].map(tool => ctx.tools.register(tool))
+  const disposers = [STATUS_TOOL].map(tool => ctx.tools.register(tool))
   disposers.push(ctx.systemPrompt.section({
     name: 'dsh-icon-studio:guidance',
     order: 3400,

@@ -68,9 +68,9 @@ image at the same slug across runs.
 
 `originals\` can be seeded from an older backup: dropping the shipped
 `tray.ico`, `icon.png` and executable in there before the first apply makes
-`dsh_icon_restore` return the vendor icons rather than whatever was live at the
-first run. The plugin itself only records what it finds, so seeding is the way to
-guarantee a clean rollback.
+**还原默认** (Restore) return the vendor icons rather than whatever was live at
+the first run. The plugin itself only records what it finds, so seeding is the
+way to guarantee a clean rollback.
 
 Engine commands (JSON on stdin, `--json-in`): `status`, `build` (assets only, no
 system change), `ingest` (store an uploaded PNG under `uploads\`), `preview`

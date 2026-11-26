@@ -124,10 +124,11 @@ async function main() {
   check('injects webServer', inject.includes('webServer'), inject.join(','))
 
   const routes = []
+  const toolNames = []
   let rejection
   const connection = { requestRejection: () => rejection }
   const ctx = {
-    tools: { register: () => () => {} },
+    tools: { register: tool => (toolNames.push(tool.name), () => {}) },
     systemPrompt: { section: () => () => {} },
     webServer: { register: route => (routes.push(route), () => {}) },
     effect: () => {},
@@ -140,6 +141,7 @@ async function main() {
   check('five routes registered', routes.length === 5, routes.map(route => route.path).join(', '))
   check('routes are exact', routes.every(route => route.kind === 'exact'))
   check('routes require host authentication', routes.every(route => route.auth === 'required'))
+  check('only the read-only status tool is exposed', toolNames.join(',') === 'dsh_icon_status', toolNames.join(','))
 
   const route = path => {
     const found = routes.find(entry => entry.path === `/api/dsh-icon-studio${path}`)

@@ -18,11 +18,10 @@ regular settings navigation). Drop or pick a PNG, the panel builds all sizes and
 shows the preview strip, then **应用** writes them. **还原默认** puts the originals
 back. Nothing is written until you press 应用.
 
-**Agent tools.** Ask the agent, e.g. "use `D:\art\my-logo.png` as the DSH icon". It calls:
-
-- `dsh_icon_apply` — build + apply (`image`, optional `targets`, `background`)
-- `dsh_icon_status` — what is applied right now
-- `dsh_icon_restore` — put the originals back
+**Agent tool.** The agent can only read state: `dsh_icon_status` reports what is
+applied right now. Changing or restoring icons is deliberately manual — the
+editor patches the executable and the shortcuts, so it happens only from the
+settings page after you press 应用.
 
 The settings page talks to the Host half over loopback-only routes:
 
@@ -74,14 +73,15 @@ changes the other.
 
 - Patching the executable changes its bytes; the Authenticode signature no longer
   matches afterwards. That is expected for a self-restyled binary, and
-  `dsh_icon_restore` (or a DSH update) brings the signed original back.
-- A DSH update replaces the executable, so re-run `dsh_icon_apply` after one.
+  **还原默认** in the settings page (or a DSH update) brings the signed original
+  back.
+- A DSH update replaces the executable, so press 应用 again after one.
   The tray icon and shortcuts survive an update only if the updater leaves
   `resources\` and the `.lnk` files alone; `dsh_icon_status` shows what is live.
 - Each apply keeps its source image as `source.png` next to the generated set, so
   an icon can be rebuilt or re-applied from the plugin's own folder.
 - Everything the plugin writes lives in `%LOCALAPPDATA%\DSH-IconStudio\`; delete
-  that folder after `dsh_icon_restore` to reclaim the backup space.
+  that folder after 还原默认 to reclaim the backup space.
 
 ## Tests
 
